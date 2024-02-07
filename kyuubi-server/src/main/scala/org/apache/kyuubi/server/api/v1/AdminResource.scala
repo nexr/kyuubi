@@ -323,6 +323,48 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "list kyuubi engines")
+  @GET
+  @Path("engines")
+  def listEngines(
+      @QueryParam("type") engineType: String,
+      @QueryParam("sharelevel") shareLevel: String,
+      @QueryParam("subdomain") subdomain: String): Seq[Engine] = {
+    val engine = normalizeEngineInfo(null, engineType, shareLevel, subdomain, "")
+    val engineSpace = calculateEngineSpace(engine)
+
+    val engineNodes = ListBuffer[ServiceNodeInfo]()
+    withDiscoveryClient(fe.getConf) { discoveryClient =>
+      Option(subdomain).filter(_.nonEmpty) match {
+        case Some(_) =>
+          info(s"Listing engine nodes under $engineSpace")
+          engineNodes ++= discoveryClient.getServiceNodesInfo(engineSpace)
+        case None if discoveryClient.pathNonExists(engineSpace) =>
+          warn(s"Path $engineSpace does not exist. engine type: $engineType, " +
+            s"share level: $shareLevel, subdomain: $subdomain")
+        case None =>
+          discoveryClient.getChildren(engineSpace).map { child =>
+            info(s"Listing engine nodes under $engineSpace/$child")
+            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child")
+          }
+      }
+    }
+    engineNodes.map(node =>
+      new Engine(
+        engine.getVersion,
+        engine.getUser,
+        engine.getEngineType,
+        engine.getSharelevel,
+        node.namespace.split("/").last,
+        node.instance,
+        node.namespace,
+        node.attributes.asJava))
+      .toSeq
+  }
+
+  @ApiResponse(
+    responseCode = "200",
     content = Array(
       new Content(
         mediaType = MediaType.APPLICATION_JSON,
