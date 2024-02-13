@@ -332,7 +332,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String): Seq[Engine] = {
     val engine = normalizeEngineInfo(null, engineType, shareLevel, subdomain, "")
+    info(s"Normalized Engine $engine")
     val engineSpace = calculateEngineSpace(engine)
+    info(s"Search under the EngineSpace : $engineSpace")
 
     val engineNodes = ListBuffer[ServiceNodeInfo]()
     withDiscoveryClient(fe.getConf) { discoveryClient =>
@@ -428,9 +430,17 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       case _ => engine.getUser
     }
 
+    info(s"userOrGroup: $userOrGroup")
+
     val engineSpace =
       s"${engine.getNamespace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}"
-    DiscoveryPaths.makePath(engineSpace, userOrGroup, engine.getSubdomain)
+
+    userOrGroup match {
+      case null =>
+        DiscoveryPaths.makePath(engineSpace, null, null)
+      case _ =>
+        DiscoveryPaths.makePath(engineSpace, userOrGroup, engine.getSubdomain)
+    }
   }
 
   @ApiResponse(
