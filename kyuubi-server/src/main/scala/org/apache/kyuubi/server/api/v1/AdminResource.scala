@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.util.Collections
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
@@ -329,7 +331,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       node: ServiceNodeInfo): Engine = {
     new Engine(
       version,
-      user.replace("%40", "@"),
+      URLDecoder.decode(user, StandardCharsets.UTF_8),
       engineType,
       shareLevel,
       node.namespace.split("/").last,
