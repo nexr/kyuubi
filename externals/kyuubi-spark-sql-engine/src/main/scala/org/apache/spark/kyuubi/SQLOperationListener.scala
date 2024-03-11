@@ -44,6 +44,7 @@ class SQLOperationListener(
     operation: Operation,
     spark: SparkSession) extends StatsReportListener with Logging {
 
+  private val applicationId: String = spark.sparkContext.applicationId
   private val operationId: String = operation.getHandle.identifier.toString
   private lazy val activeJobs = new ConcurrentHashMap[Int, SparkJobInfo]()
   private lazy val activeStages = new ConcurrentHashMap[SparkStageAttempt, SparkStageInfo]()
@@ -99,7 +100,8 @@ class SQLOperationListener(
         jobId,
         new SparkJobInfo(stageSize, stageIds))
       withOperationLog {
-        info(s"Query [$operationId]: Job $jobId started with $stageSize stages," +
+        info(s"Application [$applicationId] Query [$operationId]: " +
+          s"Job $jobId started with $stageSize stages," +
           s" ${activeJobs.size()} active jobs running")
       }
     }
@@ -129,7 +131,8 @@ class SQLOperationListener(
           stageAttempt,
           new SparkStageInfo(stageId, stageInfo.numTasks))
         withOperationLog {
-          info(s"Query [$operationId]: Stage $stageId.$attemptNumber started " +
+          info(s"Application [$applicationId] " +
+            s"Query [$operationId]: Stage $stageId.$attemptNumber started " +
             s"with ${stageInfo.numTasks} tasks, ${activeStages.size()} active stages running")
         }
       }
