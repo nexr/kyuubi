@@ -376,8 +376,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
             s"share level: $shareLevel, subdomain: $subdomain")
         case None =>
           discoveryClient.getChildren(engineSpace).map { child =>
-            info(s"Listing engine nodes under $engineSpace/$child")
-            engineNodes ++= discoveryClient.getServiceNodesInfo(s"$engineSpace/$child").map(node =>
+            val path = DiscoveryPaths.makePath(engineSpace, child, null)
+            info(s"Listing engine nodes under $path")
+            engineNodes ++= discoveryClient.getServiceNodesInfo(path).map(node =>
               makeEngineInfo(
                 child,
                 engine.getVersion,
@@ -450,7 +451,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   }
 
   private def generateEngineSpace(engine: Engine): String = {
-    s"${engine.getNamespace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}"
+    val engineSpace = {
+      s"${engine.getNamespace}_${engine.getVersion}_${engine.getSharelevel}_${engine.getEngineType}"
+    }
+
+    DiscoveryPaths.makePath(engineSpace, null, null)
   }
 
   private def calculateEngineSpace(engine: Engine): String = {
