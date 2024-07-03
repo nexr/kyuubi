@@ -77,6 +77,13 @@ class SparkProcessBuilder(
     buffer += executable
     buffer += CLASS
     buffer += mainClass
+    /**
+     * add current user to spark.yarn.tags
+     * allConf is immutable, so add to conf at here
+     */
+    conf.set(
+      SparkProcessBuilder.TAG_KEY,
+      conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + s"$proxyUser")
 
     var allConf = conf.getAll
 
@@ -96,7 +103,9 @@ class SparkProcessBuilder(
       case None =>
         setSparkUserName(proxyUser, buffer)
         buffer += PROXY_USER
-        buffer += proxyUser
+        buffer += s"hive"
+        buffer += CONF
+        buffer += s"spark.ndap.acl.user=$proxyUser"
       case Some(name) =>
         setSparkUserName(name, buffer)
     }
