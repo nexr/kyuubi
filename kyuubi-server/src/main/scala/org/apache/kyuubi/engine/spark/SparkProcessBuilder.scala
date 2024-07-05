@@ -77,6 +77,7 @@ class SparkProcessBuilder(
     buffer += executable
     buffer += CLASS
     buffer += mainClass
+
     /**
      * add current user to spark.yarn.tags
      * allConf is immutable, so add to conf at here
